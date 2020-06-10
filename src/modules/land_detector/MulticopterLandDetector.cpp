@@ -166,12 +166,12 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 
 		// Widen acceptance thresholds for landed state right after arming
 		// so that motor spool-up and other effects do not trigger false negatives.
-		vertical_movement = fabsf(_vehicle_local_position.vz) > _param_lndmc_z_vel_max.get()  * 2.5f;
+		vertical_movement = fabsf(_vehicle_local_position.vz) > _param_lndmc_z_vel_max.get() * 2.5f;
 
 	} else {
 		// Adjust max_climb_rate if land_speed is lower than 2x max_climb_rate
-		float max_climb_rate = ((land_speed_threshold * 0.5f) < _param_lndmc_z_vel_max.get()) ? (0.5f * land_speed_threshold) :
-				       _param_lndmc_z_vel_max.get();
+		float max_climb_rate = math::min(land_speed_threshold * 0.5f, _param_lndmc_z_vel_max.get());
+
 		vertical_movement = fabsf(_vehicle_local_position.vz) > max_climb_rate;
 	}
 
@@ -181,12 +181,20 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 
 	// if we have a valid velocity setpoint and the vehicle is demanded to go down but no vertical movement present,
 	// we then can assume that the vehicle hit ground
-	_in_descend = _is_climb_rate_enabled()
-		      && (_vehicle_local_position_setpoint.vz >= land_speed_threshold);
+	_in_descend = _is_climb_rate_enabled() && (_vehicle_local_position_setpoint.vz >= land_speed_threshold);
 	bool hit_ground = _in_descend && !vertical_movement;
 
+	bool ground_contact = false;
+
+	if (_maybe_landed_hysteresis.get_state() || _landed_hysteresis.get_state()) {
+		ground_contact = _has_low_thrust() || hit_ground;
+
+	} else {
+		ground_contact = _has_low_thrust() && hit_ground;
+	}
+
 	// TODO: we need an accelerometer based check for vertical movement for flying without GPS
-	return (_has_low_thrust() || hit_ground) && (!_horizontal_movement || !_has_position_lock())
+	return ground_contact && (!_horizontal_movement || !_has_position_lock())
 	       && (!vertical_movement || !_has_altitude_lock());
 }
 
