@@ -113,6 +113,14 @@ void MulticopterLandDetector::_update_params()
 	param_get(_paramHandle.minManThrottle, &_params.minManThrottle);
 	param_get(_paramHandle.landSpeed, &_params.landSpeed);
 
+	if (_param_lndmc_z_vel_max.get() > _params.landSpeed) {
+		PX4_ERR("LNDMC_Z_VEL_MAX > MPC_LAND_SPEED, updating %.3f -> %.3f",
+			(double)_param_lndmc_z_vel_max.get(), (double)_params.landSpeed);
+
+		_param_lndmc_z_vel_max.set(_params.landSpeed);
+		_param_lndmc_z_vel_max.commit_no_notification();
+	}
+
 	int32_t use_hover_thrust_estimate = 0;
 	param_get(_paramHandle.useHoverThrustEstimate, &use_hover_thrust_estimate);
 	_params.useHoverThrustEstimate = (use_hover_thrust_estimate == 1);
