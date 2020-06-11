@@ -189,7 +189,15 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 
 	// if we have a valid velocity setpoint and the vehicle is demanded to go down but no vertical movement present,
 	// we then can assume that the vehicle hit ground
-	_in_descend = _is_climb_rate_enabled() && (_vehicle_local_position_setpoint.vz >= land_speed_threshold);
+	if (_is_climb_rate_enabled()) {
+		if (PX4_ISFINITE(_vehicle_local_position_setpoint.vz)) {
+			_in_descend = (_vehicle_local_position_setpoint.vz >= land_speed_threshold);
+		}
+
+	} else {
+		_in_descend = false;
+	}
+
 	bool hit_ground = _in_descend && !vertical_movement;
 
 	bool ground_contact = false;
