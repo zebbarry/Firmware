@@ -97,6 +97,13 @@ void LoggedTopics::add_default_topics()
 	add_topic("vtol_vehicle_status", 200);
 	add_topic("yaw_estimator_status", 200);
 
+	// Control allocaton topics
+	add_topic("vehicle_angular_acceleration_setpoint", 100);
+	add_topic("vehicle_angular_acceleration", 100);
+	add_topic("vehicle_thrust_setpoint", 100);
+	add_topic("vehicle_torque_setpoint", 100);
+	add_topic("vehicle_actuator_setpoint", 100);
+
 	// multi topics
 	add_topic_multi("actuator_outputs", 100);
 	add_topic_multi("logger_status");
