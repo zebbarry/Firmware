@@ -85,26 +85,62 @@ ActuatorEffectivenessTiltrotorVTOL::setFlightPhase(const FlightPhase &flight_pha
 		}
 	}
 
-	// Trim: half throttle, tilted motors
-	_trim(0) = 0.5f;
-	_trim(1) = 0.5f;
-	_trim(2) = 0.5f;
-	_trim(3) = 0.5f;
-	_trim(4) = tilt;
-	_trim(5) = tilt;
-	_trim(6) = tilt;
-	_trim(7) = tilt;
+	const int tiltrotor_type = 1;
 
-	// Effectiveness
-	const float tiltrotor_vtol[NUM_AXES][NUM_ACTUATORS] = {
-		{-0.5f * cosf(_trim(4)),  0.5f * cosf(_trim(5)),  0.5f * cosf(_trim(6)), -0.5f * cosf(_trim(7)), 0.5f * _trim(0) *sinf(_trim(4)), -0.5f * _trim(1) *sinf(_trim(5)), -0.5f * _trim(2) *sinf(_trim(6)), 0.5f * _trim(3) *sinf(_trim(7)), -0.5f, 0.5f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
-		{ 0.5f * cosf(_trim(4)), -0.5f * cosf(_trim(5)),  0.5f * cosf(_trim(6)), -0.5f * cosf(_trim(7)), -0.5f * _trim(0) *sinf(_trim(4)),  0.5f * _trim(1) *sinf(_trim(5)), -0.5f * _trim(2) *sinf(_trim(6)), 0.5f * _trim(3) *sinf(_trim(7)), 0.f, 0.f, 0.5f, 0.f, 0.f, 0.f, 0.f, 0.f},
-		{-0.5f * sinf(_trim(4)),  0.5f * sinf(_trim(5)),  0.5f * sinf(_trim(6)), -0.5f * sinf(_trim(7)), -0.5f * _trim(0) *cosf(_trim(4)), 0.5f * _trim(1) *cosf(_trim(5)), 0.5f * _trim(2) *cosf(_trim(6)), -0.5f * _trim(3) *cosf(_trim(7)), 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
-		{ 0.25f * sinf(_trim(4)), 0.25f * sinf(_trim(5)), 0.25f * sinf(_trim(6)), 0.25f * sinf(_trim(7)), 0.25f * _trim(0) *cosf(_trim(4)), 0.25f * _trim(1) *cosf(_trim(5)), 0.25f * _trim(2) *cosf(_trim(6)), 0.25f * _trim(3) *cosf(_trim(7)), 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
-		{ 0.f,  0.f,  0.f,  0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
-		{-0.25f * cosf(_trim(4)), -0.25f * cosf(_trim(5)), -0.25f * cosf(_trim(6)), -0.25f * cosf(_trim(7)), 0.25f * _trim(0) *sinf(_trim(4)), 0.25f * _trim(1) *sinf(_trim(5)), 0.25f * _trim(2) *sinf(_trim(6)), 0.25f * _trim(3) *sinf(_trim(7)), 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f}
-	};
-	_effectiveness = matrix::Matrix<float, NUM_AXES, NUM_ACTUATORS>(tiltrotor_vtol);
+	if (tiltrotor_type == 0) {
+		// quad
+
+		// Trim: half throttle, tilted motors
+		_trim(0) = 0.5f;
+		_trim(1) = 0.5f;
+		_trim(2) = 0.5f;
+		_trim(3) = 0.5f;
+		_trim(4) = tilt;
+		_trim(5) = tilt;
+		_trim(6) = tilt;
+		_trim(7) = tilt;
+
+		// Effectiveness
+		const float tiltrotor_vtol[NUM_AXES][NUM_ACTUATORS] = {
+			{-0.5f * cosf(_trim(4)),  0.5f * cosf(_trim(5)),  0.5f * cosf(_trim(6)), -0.5f * cosf(_trim(7)), 0.5f * _trim(0) *sinf(_trim(4)), -0.5f * _trim(1) *sinf(_trim(5)), -0.5f * _trim(2) *sinf(_trim(6)), 0.5f * _trim(3) *sinf(_trim(7)), -0.5f, 0.5f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
+			{ 0.5f * cosf(_trim(4)), -0.5f * cosf(_trim(5)),  0.5f * cosf(_trim(6)), -0.5f * cosf(_trim(7)), -0.5f * _trim(0) *sinf(_trim(4)),  0.5f * _trim(1) *sinf(_trim(5)), -0.5f * _trim(2) *sinf(_trim(6)), 0.5f * _trim(3) *sinf(_trim(7)), 0.f, 0.f, 0.5f, 0.f, 0.f, 0.f, 0.f, 0.f},
+			{-0.5f * sinf(_trim(4)),  0.5f * sinf(_trim(5)),  0.5f * sinf(_trim(6)), -0.5f * sinf(_trim(7)), -0.5f * _trim(0) *cosf(_trim(4)), 0.5f * _trim(1) *cosf(_trim(5)), 0.5f * _trim(2) *cosf(_trim(6)), -0.5f * _trim(3) *cosf(_trim(7)), 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
+			{ 0.25f * sinf(_trim(4)), 0.25f * sinf(_trim(5)), 0.25f * sinf(_trim(6)), 0.25f * sinf(_trim(7)), 0.25f * _trim(0) *cosf(_trim(4)), 0.25f * _trim(1) *cosf(_trim(5)), 0.25f * _trim(2) *cosf(_trim(6)), 0.25f * _trim(3) *cosf(_trim(7)), 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
+			{ 0.f,  0.f,  0.f,  0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
+			{-0.25f * cosf(_trim(4)), -0.25f * cosf(_trim(5)), -0.25f * cosf(_trim(6)), -0.25f * cosf(_trim(7)), 0.25f * _trim(0) *sinf(_trim(4)), 0.25f * _trim(1) *sinf(_trim(5)), 0.25f * _trim(2) *sinf(_trim(6)), 0.25f * _trim(3) *sinf(_trim(7)), 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f}
+		};
+		_effectiveness = matrix::Matrix<float, NUM_AXES, NUM_ACTUATORS>(tiltrotor_vtol);
+
+	} else {
+		// tri
+
+		// Trim: half throttle, tilted motors
+		_trim(0) = 0.5f;
+		_trim(1) = 0.5f;
+		_trim(2) = 0.5f;
+		_trim(3) = tilt;
+		_trim(4) = tilt;
+
+		const float l_x_front = 0.06f;
+		const float l_x_rear = 0.24f;
+		const float l_y_front = 0.20f;
+		const float c_t_front = 6.5f;
+		const float c_t_rear = 3.25f;
+		// const float c_m_front = 0.05f;
+		const float c_m_rear = 0.025f;
+
+		// Effectiveness
+		const float tiltrotor_vtol[NUM_AXES][NUM_ACTUATORS] = {
+			{-c_t_front *l_y_front * cosf(_trim(3)), c_t_front *l_y_front * cosf(_trim(4)), 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
+			{ c_t_front *l_x_front * cosf(_trim(3)), c_t_front *l_x_front * cosf(_trim(4)),  -c_t_rear *l_x_rear * 1.0f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
+			{ 0.f, 0.f, c_m_rear, -c_t_front * _trim(0), c_t_front * _trim(1), 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
+			{ c_t_front * sinf(_trim(3)), c_t_front * sinf(_trim(4)), 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
+			{ 0.f,  0.f,  0.f,  0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
+			{ -c_t_front * cosf(_trim(3)), -c_t_front * cosf(_trim(4)), -c_t_rear, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f}
+		};
+		_effectiveness = matrix::Matrix<float, NUM_AXES, NUM_ACTUATORS>(tiltrotor_vtol);
+	}
+
 
 	// Temporarily disable a few controls (WIP)
 	for (size_t j = 4; j < 8; j++) {
