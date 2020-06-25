@@ -365,9 +365,9 @@ Navigator::run()
 					rep->current.lon = cmd.param6;
 
 				} else {
-					// If one of them is non-finite, reset both
-					rep->current.lat = (double)NAN;
-					rep->current.lon = (double)NAN;
+					// If one of them is non-finite set the current global position as target
+					rep->current.lat = get_global_position()->lat;
+					rep->current.lon = get_global_position()->lon;
 				}
 
 				rep->current.alt = cmd.param7;
@@ -891,7 +891,7 @@ Navigator::reset_position_setpoint(position_setpoint_s &sp)
 	sp.cruising_throttle = get_cruising_throttle();
 	sp.valid = false;
 	sp.type = position_setpoint_s::SETPOINT_TYPE_IDLE;
-	sp.disable_weather_vane = true;
+	sp.disable_weather_vane = false;
 }
 
 float
