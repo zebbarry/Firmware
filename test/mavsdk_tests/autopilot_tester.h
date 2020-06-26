@@ -76,6 +76,7 @@ public:
 	void prepare_square_mission(MissionOptions mission_options);
 	void execute_mission();
 	void execute_mission_and_lose_gps();
+	void execute_mission_and_lose_mag();
 	void execute_rtl();
 	void offboard_goto(const Offboard::PositionNedYaw &target, float acceptance_radius_m = 0.3f,
 			   std::chrono::seconds timeout_duration = std::chrono::seconds(60));
