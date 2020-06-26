@@ -1,0 +1,13 @@
+#!/bin/sh
+#
+# @name 3DR Iris Quadrotor SITL using GPS as height source
+#
+# @type Quadrotor Wide
+#
+
+sh /etc/init.d-posix/10016_iris
+
+if [ $AUTOCNF = yes ]
+then
+	param set EKF2_HGT_MODE 1
+fi
