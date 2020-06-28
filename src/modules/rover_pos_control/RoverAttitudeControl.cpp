@@ -45,15 +45,31 @@
 #include <mathlib/mathlib.h>
 
 
-float RoverAttitudeController::control_attitude(const struct ECL_ControlData &ctl_data) {
+float RoverAttitudeController::control_attitude(const struct ECL_ControlData &ctl_data)
+{
+	/* Do not calculate control signal with bad inputs */
+	if (!(PX4_ISFINITE(ctl_data.roll) &&
+	      PX4_ISFINITE(ctl_data.pitch) &&
+	      PX4_ISFINITE(ctl_data.roll_rate_setpoint) &&
+	      PX4_ISFINITE(ctl_data.pitch_rate_setpoint))) {
+
+		PX4_WARN("not controlling attitude");
+		return _rate_setpoint;
+	}
+
+	float yaw_error = ctl_data.yaw_setpoint - ctl_data.yaw;
+
+	_rate_setpoint = yaw_error/ _tc;
+
 	//TODO: Move attitude controller from rover pos control
-	return 0.0;
 
-}
+	if (!PX4_ISFINITE(_rate_setpoint)) {
+		PX4_WARN("yaw rate sepoint not finite");
+		_rate_setpoint = 0.0f;
+	}
 
-float RoverAttitudeController::control_euler_rate(const struct ECL_ControlData &ctl_data) {
-	//TODO: Implement euler_rate controller
-	return 0.0;
+	return _rate_setpoint;
+
 }
 
 float RoverAttitudeController::control_bodyrate(const struct ECL_ControlData &ctl_data)
@@ -119,4 +135,15 @@ float RoverAttitudeController::control_bodyrate(const struct ECL_ControlData &ct
 
 
 	return math::constrain(_last_output, -1.0f, 1.0f);
+}
+
+float RoverAttitudeController::control_euler_rate(const struct ECL_ControlData &ctl_data) {
+	/* Transform setpoint to body angular rates (jacobian) */
+	_bodyrate_setpoint = -sinf(ctl_data.roll) * ctl_data.pitch_rate_setpoint +
+			     cosf(ctl_data.roll) * cosf(ctl_data.pitch) * _rate_setpoint;
+
+	set_bodyrate_setpoint(_bodyrate_setpoint);
+
+	return control_bodyrate(ctl_data);
+
 }

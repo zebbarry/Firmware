@@ -345,7 +345,12 @@ RoverPositionControl::control_attitude(const vehicle_attitude_s &att, const vehi
 	// quaternion attitude control law, qe is rotation from q to qd
 	const Quatf qe = Quatf(att.q).inversed() * Quatf(att_sp.q_d);
 	const Eulerf euler_sp = qe;
-
+	//TODO: Switch to rate controller
+	// struct ECL_ControlData control_input = {};
+	// control_input.yaw = euler_sp(2);
+	// _att_control.control_attitude(control_input);
+	// control_input.yaw_rate_setpoint = _att_control.get_desired_rate();
+	// float control_effort = att_control.control_bodyrate(control_input);
 	float control_effort = euler_sp(2) / _param_max_turn_angle.get();
 	control_effort = math::constrain(control_effort, -1.0f, 1.0f);
 
