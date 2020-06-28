@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2018 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2012-2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,16 +37,16 @@
  * @category system
  * @group Sensor Calibration
  */
-PARAM_DEFINE_INT32(CAL_MAG3_ID, 0);
+PARAM_DEFINE_INT32(CAL_MAG2_ID, 0);
 
 /**
- * Mag 3 enabled
+ * Mag 2 enabled
  *
  * @boolean
  * @category system
  * @group Sensor Calibration
  */
-PARAM_DEFINE_INT32(CAL_MAG3_EN, 1);
+PARAM_DEFINE_INT32(CAL_MAG2_EN, 1);
 
 /**
  * Rotation of magnetometer 2 relative to airframe.
@@ -89,7 +89,7 @@ PARAM_DEFINE_INT32(CAL_MAG3_EN, 1);
  * @category system
  * @group Sensor Calibration
  */
-PARAM_DEFINE_INT32(CAL_MAG3_ROT, -1);
+PARAM_DEFINE_INT32(CAL_MAG2_ROT, -1);
 
 /**
  * Magnetometer X-axis offset
@@ -97,7 +97,7 @@ PARAM_DEFINE_INT32(CAL_MAG3_ROT, -1);
  * @category system
  * @group Sensor Calibration
  */
-PARAM_DEFINE_FLOAT(CAL_MAG3_XOFF, 0.0f);
+PARAM_DEFINE_FLOAT(CAL_MAG2_XOFF, 0.0f);
 
 /**
  * Magnetometer Y-axis offset
@@ -105,7 +105,7 @@ PARAM_DEFINE_FLOAT(CAL_MAG3_XOFF, 0.0f);
  * @category system
  * @group Sensor Calibration
  */
-PARAM_DEFINE_FLOAT(CAL_MAG3_YOFF, 0.0f);
+PARAM_DEFINE_FLOAT(CAL_MAG2_YOFF, 0.0f);
 
 /**
  * Magnetometer Z-axis offset
@@ -113,7 +113,7 @@ PARAM_DEFINE_FLOAT(CAL_MAG3_YOFF, 0.0f);
  * @category system
  * @group Sensor Calibration
  */
-PARAM_DEFINE_FLOAT(CAL_MAG3_ZOFF, 0.0f);
+PARAM_DEFINE_FLOAT(CAL_MAG2_ZOFF, 0.0f);
 
 /**
  * Magnetometer X-axis scaling factor
@@ -121,7 +121,7 @@ PARAM_DEFINE_FLOAT(CAL_MAG3_ZOFF, 0.0f);
  * @category system
  * @group Sensor Calibration
  */
-PARAM_DEFINE_FLOAT(CAL_MAG3_XSCALE, 1.0f);
+PARAM_DEFINE_FLOAT(CAL_MAG2_XSCALE, 1.0f);
 
 /**
  * Magnetometer Y-axis scaling factor
@@ -129,7 +129,7 @@ PARAM_DEFINE_FLOAT(CAL_MAG3_XSCALE, 1.0f);
  * @category system
  * @group Sensor Calibration
  */
-PARAM_DEFINE_FLOAT(CAL_MAG3_YSCALE, 1.0f);
+PARAM_DEFINE_FLOAT(CAL_MAG2_YSCALE, 1.0f);
 
 /**
  * Magnetometer Z-axis scaling factor
@@ -137,7 +137,7 @@ PARAM_DEFINE_FLOAT(CAL_MAG3_YSCALE, 1.0f);
  * @category system
  * @group Sensor Calibration
  */
-PARAM_DEFINE_FLOAT(CAL_MAG3_ZSCALE, 1.0f);
+PARAM_DEFINE_FLOAT(CAL_MAG2_ZSCALE, 1.0f);
 
 /**
 * Coefficient describing linear relationship between
@@ -149,7 +149,7 @@ PARAM_DEFINE_FLOAT(CAL_MAG3_ZSCALE, 1.0f);
 * @category system
 * @group Sensor Calibration
 */
-PARAM_DEFINE_FLOAT(CAL_MAG3_XCOMP, 0.0f);
+PARAM_DEFINE_FLOAT(CAL_MAG2_XCOMP, 0.0f);
 
 /**
 * Coefficient describing linear relationship between
@@ -161,7 +161,7 @@ PARAM_DEFINE_FLOAT(CAL_MAG3_XCOMP, 0.0f);
 * @category system
 * @group Sensor Calibration
 */
-PARAM_DEFINE_FLOAT(CAL_MAG3_YCOMP, 0.0f);
+PARAM_DEFINE_FLOAT(CAL_MAG2_YCOMP, 0.0f);
 
 /**
 * Coefficient describing linear relationship between
@@ -173,4 +173,4 @@ PARAM_DEFINE_FLOAT(CAL_MAG3_YCOMP, 0.0f);
 * @category system
 * @group Sensor Calibration
 */
-PARAM_DEFINE_FLOAT(CAL_MAG3_ZCOMP, 0.0f);
+PARAM_DEFINE_FLOAT(CAL_MAG2_ZCOMP, 0.0f);
