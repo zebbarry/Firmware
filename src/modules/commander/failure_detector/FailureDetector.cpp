@@ -50,7 +50,7 @@ FailureDetector::FailureDetector(ModuleParams *parent) :
 bool FailureDetector::resetAttitudeStatus()
 {
 
-	int attitude_fields_bitmask = _status & (FAILURE_ARM_ESCS - 1);
+	int attitude_fields_bitmask = _status & (FAILURE_ROLL | FAILURE_PITCH | FAILURE_ALT | FAILURE_EXT);
 	bool status_changed(false);
 
 	if (attitude_fields_bitmask > FAILURE_NONE) {
@@ -78,7 +78,7 @@ FailureDetector::update(const vehicle_status_s &vehicle_status)
 		updated |= resetAttitudeStatus();
 	}
 
-	if (areEscSmart()) {
+	if (_sub_esc_status.updated()) {
 
 		if (_param_escs_en.get()) {
 			updated |= updateEscsStatus(vehicle_status);

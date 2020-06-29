@@ -132,7 +132,8 @@ PARAM_DEFINE_INT32(FD_EXT_ATS_TRIG, 1900);
 
 /**
  * Enable checks on ESCs that report their arming state.
- *
+ * If enabled, Failure Detector will verify that all the ESCs have successfully armed when the vehicle has transitioned to the armed state.
+ * Timeout for receiving an acknowledgement from the ESCs is 0.3s, if no feedback is received FailureDetector will auto disarm the vehicle.
  *
  * @boolean
  * @reboot_required true

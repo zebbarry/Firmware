@@ -109,5 +109,4 @@ private:
 	bool updateAttitudeStatus();
 	bool updateExternalAtsStatus();
 	bool updateEscsStatus(const vehicle_status_s &vehicle_status);
-	bool areEscSmart() { return _sub_esc_status.updated();}
 };
