@@ -2163,7 +2163,9 @@ Commander::run()
 						mavlink_log_critical(&mavlink_log_pub, "ESCs did not respond to arm request");
 					}
 
-				} else if (hrt_elapsed_time(&_time_at_takeoff) < (1_s * _param_com_lkdown_tko.get())) {
+				}
+
+				if (hrt_elapsed_time(&_time_at_takeoff) < (1_s * _param_com_lkdown_tko.get())) {
 					// This handles the case where something fails during the early takeoff phase
 					if (!_lockdown_triggered) {
 
