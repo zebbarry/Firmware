@@ -63,6 +63,10 @@ IP_ADDRESS = "localhost"
 # Must match the one in server_gps.py
 PORT = 5556
 
+DEFAULT_ALTITUDE = 20.0
+MAX_RECV_ATTEMPTS = 100
+OFFSETS = [(0, 0), (0, 0.0001), (0.0001, 0), (0.0001, 0.0001)]
+
 class MultiMavrosOffboardPosctl(MultiMavrosCommon):
     """
     Tests flying a path in offboard control by sending position setpoints
@@ -73,8 +77,8 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
     FIXME: add flight path assertion (needs transformation from ROS frame to NED)
     """
 
-    def setUp(self, id=-1):
-        super(MultiMavrosOffboardPosctl, self).setUp(id)
+    def set_up(self, id=-1):
+        super(MultiMavrosOffboardPosctl, self).set_up(id)
 
         if id != -1:
             self.namespace = 'uav' + str(id) + '/'
@@ -92,8 +96,8 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
         self.pos_thread.daemon = True
         self.pos_thread.start()
 
-    def tearDown(self):
-        super(MultiMavrosOffboardPosctl, self).tearDown()
+    def tear_down(self):
+        super(MultiMavrosOffboardPosctl, self).tear_down()
 
     #
     # Helper methods
@@ -142,40 +146,7 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
         quaternion = quaternion_from_euler(0, 0, yaw)
         self.pos.pose.orientation = Quaternion(*quaternion)
 
-    #
-    # Test method
-    #
-    def test_posctl(self, lat_offset, lon_offset):
-        """Test offboard position control"""
 
-        # make sure the simulation is ready to start the mission
-        self.wait_for_topics(60)
-        self.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
-                                   10, -1)
-
-        self.log_topic_vars()
-        self.set_mode("OFFBOARD", 5)
-        self.set_arm(True, 5)
-
-        rospy.loginfo("run mission")
-        altitude = 20.0
-        max_attempts = 100
-        rate = rospy.Rate(5)
-
-        while not self.server_disconnected(max_attempts):
-            self.update_setpoint(lat_offset, lon_offset, altitude)
-            try:
-                rate.sleep()
-            except rospy.ROSException as e:
-                self.fail(e)
-
-        if self.server_disconnected(max_attempts):
-            rospy.loginfo("maximum number of failed attempts to recieve setpoint ({}) reached".format(self.recv_attempts))
-
-        self.set_mode("AUTO.LAND", 5)
-        self.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
-                                   45, 0)
-        self.set_arm(False, 5)
 
 class Controller():
 
@@ -192,11 +163,11 @@ class Controller():
         self.uavs = []
         for i in range(num_uavs):
             self.uavs.append(MultiMavrosOffboardPosctl())
-            self.uavs[i].setUp(i)
+            self.uavs[i].set_up(i)
 
-    def tearDown(self):
+    def tear_down(self):
         for uav in self.uavs:
-            uav.tearDown()
+            uav.tear_down()
 
     def server_disconnected(self, max_attempts):
         """Returns true if failed recieve attempts is above threshold"""
@@ -210,14 +181,23 @@ class Controller():
             message = self.socket.recv(flags=zmq.NOBLOCK).decode('utf-8')
         except zmq.ZMQError:
             self.recv_attempts += 1
+            return False
         else:
             self.recv_attempts = 0
             time_sample, latitude, longitude = message.split(',')
             self.setpoint_lat = float(latitude)
             self.setpoint_lon = float(longitude)
+            return True
 
-    def run_posctl(self):
-        """Test multi uav posctl simultaneously"""
+    def reach_position(self, lat, lon, alt):
+        """Set setpoints for each drone with predefined offset"""
+        for i in range(self.num_uavs):
+            lat = self.setpoint_lat + OFFSETS[i][0]
+            lon = self.setpoint_lon + OFFSETS[i][1]
+            self.uavs[i].reach_position(lat, lon, self.setpoint_alt)
+
+    def take_off(self):
+        """Set mode to offboard and takeoff all uavs"""
         for uav in self.uavs:
             uav.wait_for_topics(60)
             uav.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
@@ -227,21 +207,23 @@ class Controller():
             uav.set_mode("OFFBOARD", 5)
             uav.set_arm(True, 5)
 
+    def land(self):
+        """Land all uavs and disarm"""
+        for uav in self.uavs:
+            uav.set_mode("AUTO.LAND", 5)
+            uav.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
+                                       45, 0)
+            uav.set_arm(False, 5)
+
+    def run_posctl(self):
+        """Test multi uav posctl simultaneously"""
         rospy.loginfo("run mission")
-
-        self.setpoint_lat = -43.52063
-        self.setpoint_lon = 172.58324
-        self.setpoint_alt = 20.0
-        max_attempts = 100
+        self.setpoint_alt = DEFAULT_ALTITUDE
         rate = rospy.Rate(5)
-        offset = [(0, 0), (0, 0.0001), (0.0001, 0), (0.0001, 0.0001)]
 
-        while not self.server_disconnected(max_attempts):
-            self.update_setpoint()
-            for i in range(self.num_uavs):
-                lat = self.setpoint_lat + offset[i][0]
-                lon = self.setpoint_lon + offset[i][1]
-                self.uavs[i].reach_position(lat, lon, self.setpoint_alt)
+        while not self.server_disconnected(MAX_RECV_ATTEMPTS):
+            if self.update_setpoint():
+                self.reach_position(self.setpoint_lat, self.setpoint_lon, self.setpoint_alt)
             try:
                 rate.sleep()
             except rospy.ROSException as e:
@@ -249,14 +231,6 @@ class Controller():
 
         if self.server_disconnected(max_attempts):
             rospy.loginfo("maximum number of failed attempts to recieve setpoint ({}) reached".format(self.recv_attempts))
-
-        for uav in self.uavs:
-            uav.set_mode("AUTO.LAND", 5)
-
-        for uav in self.uavs:
-            uav.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
-                                       45, 0)
-            uav.set_arm(False, 5)
 
 
 
@@ -266,10 +240,7 @@ if __name__ == '__main__':
     rospy.init_node('test_node', anonymous=True)
 
     controller = Controller(4)
+    controller.take_off()
     controller.run_posctl()
-    controller.tearDown()
-
-    # controller = MultiMavrosOffboardPosctl()
-    # controller.setUp(1)
-    # controller.test_posctl()
-    # controller.tearDown()
+    controller.land()
+    controller.tear_down()

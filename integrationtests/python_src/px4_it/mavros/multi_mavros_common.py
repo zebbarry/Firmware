@@ -19,7 +19,7 @@ class MultiMavrosCommon(unittest.TestCase):
         # super(MavrosCommon, self).__init__(*args)
         pass
 
-    def setUp(self, id=-1):
+    def set_up(self, id=-1):
         self.altitude = Altitude()
         self.extended_state = ExtendedState()
         self.global_position = NavSatFix()
@@ -86,7 +86,7 @@ class MultiMavrosCommon(unittest.TestCase):
         self.state_sub = rospy.Subscriber(self.namespace + 'mavros/state', State,
                                           self.state_callback)
 
-    def tearDown(self):
+    def tear_down(self):
         self.log_topic_vars()
 
     #
