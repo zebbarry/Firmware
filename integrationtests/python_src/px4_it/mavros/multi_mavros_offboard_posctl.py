@@ -134,11 +134,6 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
         self.pos.pose.position.latitude = lat
         self.pos.pose.position.longitude = lon
         self.pos.pose.position.altitude = alt
-        # rospy.loginfo(
-        #     "attempting to reach position | x: {0}, y: {1}, z: {2} | current position x: {3:.2f}, y: {4:.2f}, z: {5:.2f}".
-        #     format(lat, lon, alt, self.global_position.latitude,
-        #            self.global_position.longitude,
-        #            self.global_position.altitude))
 
         # For demo purposes we will lock yaw/heading to north.
         yaw_degrees = 0  # North
@@ -191,10 +186,14 @@ class Controller():
 
     def reach_position(self, lat, lon, alt):
         """Set setpoints for each drone with predefined offset"""
+        rospy.loginfo(
+            "setpoint position | x: {0}, y: {1}, z: {2:.1f}".
+            format(lat, lon, alt))
+
         for i in range(self.num_uavs):
-            lat = self.setpoint_lat + OFFSETS[i][0]
-            lon = self.setpoint_lon + OFFSETS[i][1]
-            self.uavs[i].reach_position(lat, lon, self.setpoint_alt)
+            lat_offset = lat + OFFSETS[i][0]
+            lon_offset = lon + OFFSETS[i][1]
+            self.uavs[i].reach_position(lat_offset, lon_offset, alt)
 
     def take_off(self):
         """Set mode to offboard and takeoff all uavs"""
@@ -202,7 +201,6 @@ class Controller():
             uav.wait_for_topics(60)
             uav.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
                                        10, -1)
-
             uav.log_topic_vars()
             uav.set_mode("OFFBOARD", 5)
             uav.set_arm(True, 5)
