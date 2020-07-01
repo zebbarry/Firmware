@@ -14,9 +14,9 @@ from sensor_msgs.msg import NavSatFix, Imu
 from six.moves import xrange
 
 
-class MavrosTestCommon(unittest.TestCase):
+class MavrosCommon(unittest.TestCase):
     def __init__(self, *args):
-        # super(MavrosTestCommon, self).__init__(*args)
+        # super(MavrosCommon, self).__init__(*args)
         pass
 
     def setUp(self):

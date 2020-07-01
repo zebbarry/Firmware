@@ -46,7 +46,7 @@ import math
 import numpy as np
 from geographic_msgs.msg import GeoPoseStamped
 from geometry_msgs.msg import PoseStamped, Quaternion
-from mavros_common import MavrosTestCommon
+from mavros_common import MavrosCommon
 from pymavlink import mavutil
 from six.moves import xrange
 from std_msgs.msg import Header
@@ -63,7 +63,7 @@ IP_ADDRESS = "localhost"
 # Must match the one in server_gps.py
 PORT = 5556
 
-class MavrosOffboardPosctl(MavrosTestCommon):
+class MavrosOffboardPosctl(MavrosCommon):
     """
     Tests flying a path in offboard control by sending position setpoints
     via MAVROS.
@@ -84,7 +84,6 @@ class MavrosOffboardPosctl(MavrosTestCommon):
         self.socket.setsockopt(zmq.SUBSCRIBE, b"")
         self.recv_attempts = 0
 
-        # self.pos = PoseStamped()
         self.pos = GeoPoseStamped()
         self.radius = 1
 
@@ -128,15 +127,15 @@ class MavrosOffboardPosctl(MavrosTestCommon):
                         self.local_position.pose.position.z))
         return np.linalg.norm(desired - pos) < offset
 
-    def reach_position(self, x, y, z, timeout):
+    def reach_position(self, lat, lon, alt, timeout):
         """timeout(int): seconds"""
         # set a position setpoint
-        self.pos.pose.position.latitude = x
-        self.pos.pose.position.longitude = y
-        self.pos.pose.position.altitude = z
+        self.pos.pose.position.latitude = lat
+        self.pos.pose.position.longitude = lon
+        self.pos.pose.position.altitude = alt
         rospy.loginfo(
             "attempting to reach position | x: {0}, y: {1}, z: {2} | current position x: {3:.2f}, y: {4:.2f}, z: {5:.2f}".
-            format(x, y, z, self.global_position.latitude,
+            format(lat, lon, alt, self.global_position.latitude,
                    self.global_position.longitude,
                    self.global_position.altitude))
 
@@ -205,7 +204,7 @@ class MavrosOffboardPosctl(MavrosTestCommon):
         self.set_arm(True, 5)
 
         rospy.loginfo("run mission")
-        altitude = 20
+        altitude = 20.0
         timeout = 30 # seconds
         max_attempts = 100
         rate = rospy.Rate(5)
@@ -234,6 +233,3 @@ if __name__ == '__main__':
     controller.setUp()
     controller.test_posctl()
     controller.tearDown()
-
-    # rostest.rosrun(PKG, 'mavros_offboard_posctl_test',
-    #                MavrosOffboardPosctlTest)
