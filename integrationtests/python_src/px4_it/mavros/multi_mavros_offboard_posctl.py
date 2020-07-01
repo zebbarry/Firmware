@@ -145,7 +145,7 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
 
 class Controller():
 
-    def __init__(self, num_uavs):
+    def __init__(self, num_uavs=1):
         # Socket receive readings from the server.
         context = zmq.Context()
         self.socket = context.socket(zmq.SUB, )
