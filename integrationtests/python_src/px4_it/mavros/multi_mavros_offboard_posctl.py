@@ -168,7 +168,7 @@ class Controller():
         """Returns true if failed recieve attempts is above threshold"""
         if self.recv_attempts != 0 and self.recv_attempts % 10 == 0:
             rospy.loginfo("{} failed attempts to recieve setpoint".format(self.recv_attempts))
-        return self.recv_attempts > max_attempts
+        return self.recv_attempts >= max_attempts
 
     def update_setpoint(self):
         """Update setpoint based on data from server"""
@@ -227,7 +227,7 @@ class Controller():
             except rospy.ROSException as e:
                 self.fail(e)
 
-        if self.server_disconnected(max_attempts):
+        if self.server_disconnected(MAX_RECV_ATTEMPTS):
             rospy.loginfo("maximum number of failed attempts to recieve setpoint ({}) reached".format(self.recv_attempts))
 
 
