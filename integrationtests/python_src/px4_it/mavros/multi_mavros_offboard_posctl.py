@@ -76,14 +76,6 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
     def setUp(self, id=-1):
         super(MultiMavrosOffboardPosctl, self).setUp(id)
 
-        # Socket receive readings from the server.
-        context = zmq.Context()
-        self.socket = context.socket(zmq.SUB, )
-        rospy.loginfo("connecting to server")
-        self.socket.connect("tcp://{}:{}".format(IP_ADDRESS, PORT))
-        self.socket.setsockopt(zmq.SUBSCRIBE, b"")
-        self.recv_attempts = 0
-
         if id != -1:
             self.namespace = 'uav' + str(id) + '/'
         else:
@@ -132,66 +124,23 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
                         self.local_position.pose.position.z))
         return np.linalg.norm(desired - pos) < offset
 
-    def reach_position(self, lat, lon, alt, timeout):
+    def reach_position(self, lat, lon, alt):
         """timeout(int): seconds"""
         # set a position setpoint
         self.pos.pose.position.latitude = lat
         self.pos.pose.position.longitude = lon
         self.pos.pose.position.altitude = alt
-        rospy.loginfo(
-            "attempting to reach position | x: {0}, y: {1}, z: {2} | current position x: {3:.2f}, y: {4:.2f}, z: {5:.2f}".
-            format(lat, lon, alt, self.global_position.latitude,
-                   self.global_position.longitude,
-                   self.global_position.altitude))
+        # rospy.loginfo(
+        #     "attempting to reach position | x: {0}, y: {1}, z: {2} | current position x: {3:.2f}, y: {4:.2f}, z: {5:.2f}".
+        #     format(lat, lon, alt, self.global_position.latitude,
+        #            self.global_position.longitude,
+        #            self.global_position.altitude))
 
         # For demo purposes we will lock yaw/heading to north.
         yaw_degrees = 0  # North
         yaw = math.radians(yaw_degrees)
         quaternion = quaternion_from_euler(0, 0, yaw)
         self.pos.pose.orientation = Quaternion(*quaternion)
-
-        # does it reach the position in 'timeout' seconds?
-        # loop_freq = 2  # Hz
-        # rate = rospy.Rate(loop_freq)
-        # reached = False
-        # for i in xrange(timeout * loop_freq):
-        #     if self.is_at_position(self.pos.pose.position.latitude,
-        #                            self.pos.pose.position.longitude,
-        #                            self.pos.pose.position.altitude, self.radius):
-        #         rospy.loginfo("position reached | seconds: {0} of {1}".format(
-        #             i / loop_freq, timeout))
-        #         reached = True
-        #         break
-        #
-        #     try:
-        #         rate.sleep()
-        #     except rospy.ROSException as e:
-        #         self.fail(e)
-        #
-        # self.assertTrue(reached, (
-        #     "took too long to get to position | current position x: {0:.2f}, y: {1:.2f}, z: {2:.2f} | timeout(seconds): {3}".
-        #     format(self.global_position.latitude,
-        #            self.global_position.longitude,
-        #            self.global_position.altitude, timeout)))
-
-    def server_disconnected(self, max_attempts):
-        """Returns true if failed recieve attempts is above threshold"""
-        if self.recv_attempts != 0 and self.recv_attempts % 10 == 0:
-            rospy.loginfo("{} failed attempts to recieve setpoint".format(self.recv_attempts))
-        return self.recv_attempts > max_attempts
-
-    def update_setpoint(self, lat_offset, lon_offset, altitude, timeout):
-        """Update setpoint based on data from server"""
-        try:
-            message = self.socket.recv(flags=zmq.NOBLOCK).decode('utf-8')
-        except zmq.ZMQError:
-            self.recv_attempts += 1
-        else:
-            self.recv_attempts = 0
-            time_sample, latitude, longitude = message.split(',')
-            lat = float(latitude) + lat_offset
-            lon = float(longitude) + lon_offset
-            self.reach_position(lat, lon, altitude, timeout)
 
     #
     # Test method
@@ -210,12 +159,11 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
 
         rospy.loginfo("run mission")
         altitude = 20.0
-        timeout = 30 # seconds
         max_attempts = 100
         rate = rospy.Rate(5)
 
         while not self.server_disconnected(max_attempts):
-            self.update_setpoint(lat_offset, lon_offset, altitude, timeout)
+            self.update_setpoint(lat_offset, lon_offset, altitude)
             try:
                 rate.sleep()
             except rospy.ROSException as e:
@@ -229,23 +177,97 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
                                    45, 0)
         self.set_arm(False, 5)
 
+class Controller():
+
+    def __init__(self, num_uavs):
+        # Socket receive readings from the server.
+        context = zmq.Context()
+        self.socket = context.socket(zmq.SUB, )
+        rospy.loginfo("connecting to server")
+        self.socket.connect("tcp://{}:{}".format(IP_ADDRESS, PORT))
+        self.socket.setsockopt(zmq.SUBSCRIBE, b"")
+        self.recv_attempts = 0
+
+        self.num_uavs = num_uavs
+        self.uavs = []
+        for i in range(num_uavs):
+            self.uavs.append(MultiMavrosOffboardPosctl())
+            self.uavs[i].setUp(i)
+
+    def tearDown(self):
+        for uav in self.uavs:
+            uav.tearDown()
+
+    def server_disconnected(self, max_attempts):
+        """Returns true if failed recieve attempts is above threshold"""
+        if self.recv_attempts != 0 and self.recv_attempts % 10 == 0:
+            rospy.loginfo("{} failed attempts to recieve setpoint".format(self.recv_attempts))
+        return self.recv_attempts > max_attempts
+
+    def update_setpoint(self):
+        """Update setpoint based on data from server"""
+        try:
+            message = self.socket.recv(flags=zmq.NOBLOCK).decode('utf-8')
+        except zmq.ZMQError:
+            self.recv_attempts += 1
+        else:
+            self.recv_attempts = 0
+            time_sample, latitude, longitude = message.split(',')
+            self.setpoint_lat = float(latitude)
+            self.setpoint_lon = float(longitude)
+
+    def run_posctl(self):
+        """Test multi uav posctl simultaneously"""
+        for uav in self.uavs:
+            uav.wait_for_topics(60)
+            uav.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
+                                       10, -1)
+
+            uav.log_topic_vars()
+            uav.set_mode("OFFBOARD", 5)
+            uav.set_arm(True, 5)
+
+        rospy.loginfo("run mission")
+
+        self.setpoint_lat = -43.52063
+        self.setpoint_lon = 172.58324
+        self.setpoint_alt = 20.0
+        max_attempts = 100
+        rate = rospy.Rate(5)
+        offset = [(0, 0), (0, 0.0001), (0.0001, 0), (0.0001, 0.0001)]
+
+        while not self.server_disconnected(max_attempts):
+            self.update_setpoint()
+            for i in range(self.num_uavs):
+                lat = self.setpoint_lat + offset[i][0]
+                lon = self.setpoint_lon + offset[i][1]
+                self.uavs[i].reach_position(lat, lon, self.setpoint_alt)
+            try:
+                rate.sleep()
+            except rospy.ROSException as e:
+                self.fail(e)
+
+        if self.server_disconnected(max_attempts):
+            rospy.loginfo("maximum number of failed attempts to recieve setpoint ({}) reached".format(self.recv_attempts))
+
+        for uav in self.uavs:
+            uav.set_mode("AUTO.LAND", 5)
+
+        for uav in self.uavs:
+            uav.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
+                                       45, 0)
+            uav.set_arm(False, 5)
+
+
+
 
 if __name__ == '__main__':
     import rostest
     rospy.init_node('test_node', anonymous=True)
 
-    num_drones = 3
-    drones = []
-    for i in range(num_drones):
-        drones.append(MultiMavrosOffboardPosctl())
-        drones[i].setUp(i)
-
-    drones[0].test_posctl(0, 0)
-    drones[1].test_posctl(1, 0)
-    drones[2].test_posctl(0, 1)
-
-    for drone in drones:
-        drone.tearDown()
+    controller = Controller(4)
+    controller.run_posctl()
+    controller.tearDown()
 
     # controller = MultiMavrosOffboardPosctl()
     # controller.setUp(1)
