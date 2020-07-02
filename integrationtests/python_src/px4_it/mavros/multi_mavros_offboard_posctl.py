@@ -99,9 +99,6 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
     def tear_down(self):
         super(MultiMavrosOffboardPosctl, self).tear_down()
 
-    #
-    # Helper methods
-    #
     def send_pos(self):
         rate = rospy.Rate(10)  # Hz
         self.pos.header = Header()
@@ -140,6 +137,22 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
         yaw = math.radians(yaw_degrees)
         quaternion = quaternion_from_euler(0, 0, yaw)
         self.pos.pose.orientation = Quaternion(*quaternion)
+
+    def take_off(self):
+        """ Set mode to offboard and takeoff """
+        self.wait_for_topics(60)
+        self.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
+                                   10, -1)
+        self.log_topic_vars()
+        self.set_mode("OFFBOARD", 5)
+        self.set_arm(True, 5)
+
+    def land(self):
+        """ Land uav and disarm """
+        self.set_mode("AUTO.LAND", 5)
+        self.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
+                                   45, 0)
+        self.set_arm(False, 5)
 
 
 
@@ -198,20 +211,12 @@ class Controller():
     def take_off(self):
         """Set mode to offboard and takeoff all uavs"""
         for uav in self.uavs:
-            uav.wait_for_topics(60)
-            uav.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
-                                       10, -1)
-            uav.log_topic_vars()
-            uav.set_mode("OFFBOARD", 5)
-            uav.set_arm(True, 5)
+            uav.take_off()
 
     def land(self):
         """Land all uavs and disarm"""
         for uav in self.uavs:
-            uav.set_mode("AUTO.LAND", 5)
-            uav.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
-                                       45, 0)
-            uav.set_arm(False, 5)
+            uav.land()
 
     def run_posctl(self):
         """Test multi uav posctl simultaneously"""
