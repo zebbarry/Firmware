@@ -77,11 +77,11 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
     FIXME: add flight path assertion (needs transformation from ROS frame to NED)
     """
 
-    def set_up(self, id=-1):
-        super(MultiMavrosOffboardPosctl, self).set_up(id)
+    def set_up(self, uav_id=-1):
+        super(MultiMavrosOffboardPosctl, self).set_up(uav_id)
 
-        if id != -1:
-            self.namespace = 'uav' + str(id) + '/'
+        if uav_id != -1:
+            self.namespace = 'uav' + str(uav_id) + '/'
         else:
             self.namespace = ''
 

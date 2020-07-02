@@ -19,7 +19,7 @@ class MultiMavrosCommon(unittest.TestCase):
         # super(MavrosCommon, self).__init__(*args)
         pass
 
-    def set_up(self, id=-1):
+    def set_up(self, uav_id=-1):
         self.altitude = Altitude()
         self.extended_state = ExtendedState()
         self.global_position = NavSatFix()
@@ -29,8 +29,8 @@ class MultiMavrosCommon(unittest.TestCase):
         self.mission_wp = WaypointList()
         self.state = State()
         self.mav_type = None
-        if id != -1:
-            self.namespace = 'uav' + str(id) + '/'
+        if uav_id != -1:
+            self.namespace = 'uav' + str(uav_id) + '/'
         else:
             self.namespace = ''
 
