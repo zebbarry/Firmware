@@ -65,7 +65,7 @@ PORT = 5556
 
 DEFAULT_ALTITUDE = 20.0
 MAX_RECV_ATTEMPTS = 100
-OFFSETS = [(0, 0), (0, 0.0001), (0.0001, 0), (0.0001, 0.0001)]
+OFFSETS = [(0, 0), (0.0001, -0.0001), (0.0001, 0.0001), (-0.0001, -0.0001), (-0.0001, 0.0001)]
 
 class MultiMavrosOffboardPosctl(MultiMavrosCommon):
     """
@@ -237,7 +237,7 @@ if __name__ == '__main__':
     import rostest
     rospy.init_node('test_node', anonymous=True)
 
-    controller = Controller(4)
+    controller = Controller(5)
     controller.take_off()
     controller.run_posctl()
     controller.land()
