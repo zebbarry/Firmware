@@ -39,19 +39,15 @@
 # dependencies such as pymavlink don't play well with Python3 yet.
 from __future__ import division
 
-PKG = 'px4'
-
 import rospy
 import math
-import numpy as np
 from geographic_msgs.msg import GeoPoseStamped
-from geometry_msgs.msg import PoseStamped, Quaternion
+from geometry_msgs.msg import Quaternion
 from multi_mavros_common import MultiMavrosCommon
 from pymavlink import mavutil
 from six.moves import xrange
 from std_msgs.msg import Header
 from threading import Thread
-from tf.transformations import quaternion_from_euler
 import zmq
 
 # Will need to change this if communicating between different machines.
@@ -63,21 +59,16 @@ IP_ADDRESS = "localhost"
 # Must match the one in server_gps.py
 PORT = 5556
 
-DEFAULT_ALTITUDE = 20.0
+DEFAULT_ALTITUDE = 20
 MAX_RECV_ATTEMPTS = 100
 OFFSETS = [(0, 0), (0.0001, -0.0001), (0.0001, 0.0001), (-0.0001, -0.0001), (-0.0001, 0.0001)]
 
 class MultiMavrosOffboardPosctl(MultiMavrosCommon):
-    """
-    Tests flying a path in offboard control by sending position setpoints
-    via MAVROS.
+    """ Controls a drone in Gazebo by sending position setpoints via MAVROS. """
 
-    For the test to be successful it needs to reach all setpoints in a certain time.
-
-    FIXME: add flight path assertion (needs transformation from ROS frame to NED)
-    """
 
     def set_up(self, uav_id=-1):
+        rospy.init_node('offboard', anonymous=True)
         super(MultiMavrosOffboardPosctl, self).set_up(uav_id)
 
         if uav_id != -1:
@@ -86,8 +77,6 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
             self.namespace = ''
 
         self.pos = GeoPoseStamped()
-        self.radius = 1
-
         self.pos_setpoint_pub = rospy.Publisher(
             self.namespace + 'mavros/setpoint_position/global', GeoPoseStamped, queue_size=1)
 
@@ -97,9 +86,25 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
         self.pos_thread.start()
 
     def tear_down(self):
+        """ Teardown, including landing and disarming the drone. """
         super(MultiMavrosOffboardPosctl, self).tear_down()
 
+    def take_off(self):
+        """ Set mode to offboard and takeoff """
+        self.wait_for_topics(60)
+        self.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND, 10, -1)
+        self.log_topic_vars()
+        self.set_mode("OFFBOARD", 5)
+        self.set_arm(True, 5)
+
+    def land(self):
+        """ Land UAV and disarm """
+        self.set_mode("AUTO.LAND", 5)
+        self.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND, 45, 0)
+        self.set_arm(False, 5)
+
     def send_pos(self):
+        """ Runs in a separate thread, publishing current position at a rate of 10 Hz. """
         rate = rospy.Rate(10)  # Hz
         self.pos.header = Header()
         self.pos.header.frame_id = "base_footprint"
@@ -112,19 +117,6 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
             except rospy.ROSInterruptException:
                 pass
 
-    def is_at_position(self, x, y, z, offset):
-        """offset: meters"""
-        rospy.logdebug(
-            "current position | x:{0:.2f}, y:{1:.2f}, z:{2:.2f}".format(
-                self.local_position.pose.position.x, self.local_position.pose.
-                position.y, self.local_position.pose.position.z))
-
-        desired = np.array((x, y, z))
-        pos = np.array((self.local_position.pose.position.x,
-                        self.local_position.pose.position.y,
-                        self.local_position.pose.position.z))
-        return np.linalg.norm(desired - pos) < offset
-
     def reach_position(self, lat, lon, alt):
         """timeout(int): seconds"""
         # set a position setpoint
@@ -132,27 +124,9 @@ class MultiMavrosOffboardPosctl(MultiMavrosCommon):
         self.pos.pose.position.longitude = lon
         self.pos.pose.position.altitude = alt
 
-        # For demo purposes we will lock yaw/heading to north.
-        yaw_degrees = 0  # North
-        yaw = math.radians(yaw_degrees)
-        quaternion = quaternion_from_euler(0, 0, yaw)
-        self.pos.pose.orientation = Quaternion(*quaternion)
-
-    def take_off(self):
-        """ Set mode to offboard and takeoff """
-        self.wait_for_topics(60)
-        self.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
-                                   10, -1)
-        self.log_topic_vars()
-        self.set_mode("OFFBOARD", 5)
-        self.set_arm(True, 5)
-
-    def land(self):
-        """ Land uav and disarm """
-        self.set_mode("AUTO.LAND", 5)
-        self.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
-                                   45, 0)
-        self.set_arm(False, 5)
+        # Remove tf dependency for now to allow running with Python3
+        # (this is equivalent to setting heading to North)
+        self.pos.pose.orientation = Quaternion(0, 0, 0, 1)
 
 
 
@@ -237,11 +211,7 @@ class Controller():
 
 
 
-
 if __name__ == '__main__':
-    import rostest
-    rospy.init_node('test_node', anonymous=True)
-
     controller = Controller(5)
     controller.take_off()
     controller.run_posctl()
