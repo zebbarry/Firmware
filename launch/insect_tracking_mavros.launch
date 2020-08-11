@@ -1,0 +1,26 @@
+<launch>
+	<arg name="log_output" default="screen" />
+	<arg name="fcu_protocol" default="v2.0" />
+	<arg name="respawn_mavros" default="false" />
+	<arg name="ip" default="10.42.0.1"/>
+	<!-- <arg name="ip" default="10.192.14.90"/> -->
+	<arg name="serial_name" default="ttyPixhawk"/>
+
+	<arg name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
+	<arg name="config_yaml" value="$(find mavros)/launch/px4_config.yaml" />
+
+  <node pkg="mavros" type="mavros_node" name="mavros" required="$(eval not respawn_mavros)" clear_params="true" output="$(arg log_output)" respawn="$(arg respawn_mavros)">
+		<param name="fcu_url" value="/dev/$(arg serial_name):921600" />
+		<param name="gcs_url" value="udp://@$(arg ip)" />
+		<param name="target_system_id" value="1" />
+		<param name="target_component_id" value="1" />
+		<param name="fcu_protocol" value="v2.0" />
+
+    <param name="conn/timesync_rate" value="10.0"/>
+    <param name="conn/system_time_rate" value="1.0"/>
+
+		<!-- load blacklist, config -->
+		<rosparam command="load" file="$(arg pluginlists_yaml)" />
+		<rosparam command="load" file="$(arg config_yaml)" />
+	</node>
+</launch>
