@@ -12,7 +12,7 @@
   <node pkg="mavros" type="mavros_node" name="mavros" required="$(eval not respawn_mavros)" clear_params="true" output="$(arg log_output)" respawn="$(arg respawn_mavros)">
 		<param name="fcu_url" value="/dev/$(arg serial_name):921600" />
 		<param name="gcs_url" value="udp://@$(arg ip)" />
-		<param name="target_system_id" value="1" />
+		<param name="target_system_id" value="20" />
 		<param name="target_component_id" value="1" />
 		<param name="fcu_protocol" value="v2.0" />
 
